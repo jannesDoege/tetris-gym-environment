@@ -2,7 +2,7 @@ import gym
 import numpy as np
 
 class Shape:
-    def __init__(self, rot0: np.ndarray, rot90: np.ndarray, rot180: np.ndarray, rot270: np.ndarray):
+    def __init__(self, rot0, rot90, rot180, rot270):
         self.rot = 0
         self.shapes = {
             "rot0": rot0,
@@ -21,13 +21,13 @@ class Shape:
             self.rot = 270
         self.shape = self.shapes["rot" + str(self.rot)]
 
-lblock = Shape()
-jblock = Shape()
-sblock = Shape()
-zblock = Shape()
-tblock = Shape()
-iblock = Shape()
-sqrblock = Shape()
+lblock = Shape([(1, 1), (1, 0), (0, 1), (1, 0)], [(1, 1), (1, 0), (0, 1), (1, 0)], [(1, 1), (1, 0), (0, 1), (1, 0)], [(1, 1), (1, 0), (0, 1), (1, 0)])
+#jblock = Shape()
+#sblock = Shape()
+#zblock = Shape()
+#tblock = Shape()
+#iblock = Shape()
+#sqrblock = Shape()
 
 class Tetris(gym.Env):
     def __init__(self):
@@ -36,8 +36,8 @@ class Tetris(gym.Env):
         self.blocks_buf = [i for i in self.blocks]
         self.blocks_buf.shuffle()
         self.step_idx = 0
-        self.free_fall = False
         self.current_block = None
+        self.block_count = 0
         
     def step(self, action):
         self.step_idx += 1
@@ -48,11 +48,21 @@ class Tetris(gym.Env):
         
         if not self.free_fall:
             self.current_block = self.blocks_buf.pop(0)
-
+        else:
+            pass
+        
+        # every block has its own number
+        # this is used to get sticky line clears
 
 
     def reset(self):
-        pass
+        self.board = np.zeros((10, 40))
+        self.blocks = [lblock, jblock, sblock, zblock, tblock, iblock, sqrblock]
+        self.blocks_buf = [i for i in self.blocks]
+        self.blocks_buf.shuffle()
+        self.step_idx = 0
+        self.free_fall = False
+        self.current_block = None
 
     def render(self, render_mode="human"):
         pass
