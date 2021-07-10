@@ -7,15 +7,15 @@ from numpy.core.einsumfunc import _einsum_dispatcher
 class Tetris(gym.Env):
     WIDTH = 10
     HEIGHT = 40
+    
     TETRAMINOS = [
-        [(1, 1), (1, 0), (0, 1), (1, 0)], # lblock
-        #jblock 
-        #sblock 
-        #zblock 
-        #tblock 
-        #iblock 
-        #sqrblock
-
+        [(0,0), (0,1), (1,0), (2,0)], # lblock
+        [(0,0), (0,1), (1,1), (2,1)], # jblock 
+        [(0,1), (1,0), (1,1), (2,0)], # sblock 
+        [(0,0), (1,0), (1,1), (2,1)], # zblock 
+        [(0,0), (1,0), (1,1), (2,0)], # tblock 
+        [(0,0), (1,0), (2,0), (3,0)], # iblock 
+        [(0,0), (0,1), (1,0), (1,1)]  # sqrblock
     ]
 
     def __init__(self):
