@@ -96,22 +96,25 @@ class Tetris(gym.Env):
                         self.board[i][val_idx] = val
             
 
-        for i in range(1, self.block_count+1):
+        for i in range(1, self.block_count):
             fall = None
             for j in self.board:
                 for n, k in enumerate(j):
                     # check if it is block and if there is not block below
                     if k == i and (j[int(n)+1] == 0 or j[int(n)+1] == i):
                         fall = True
-                    else: fall = False
+                    elif(k == i and (j[int(n)+1] != 0)): fall = False
             # do sticky fall
             if fall:
                 for idx, column in enumerate(self.board):
                     for n, num in enumerate(column):
-                        if num == i:
+                        if n == 39:
+                            continue
+                        if num == i and i is not 0:
                             self.board[idx][int(n)] = 0.0
                             self.board[idx][int(n+1)] = i
-            print(fall)
+                            
+
             if i == self.block_count and fall:
                 self.free_fall = True
             else:
@@ -146,6 +149,5 @@ t = Tetris()
 
 for i in range(3):
     obs, reward, done, info = t.step(3)
-    print(t.current_block)
     print(obs[2:6])
     
