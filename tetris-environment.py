@@ -48,7 +48,8 @@ class Tetris(gym.Env):
         self.current_block = None
         self.block_count = 0
         self.rewards = [0, 1, 4, 8, 16]
-        self.free_fall = True
+        self.free_fall = False
+        self.block_a = None
 
         self.observation_space = gym.spaces.Box(low=0, high=1, shape=(Tetris.WIDTH, Tetris.HEIGHT), dtype=np.uint8)
         self.action_space = gym.spaces.Discrete(5)
@@ -71,7 +72,12 @@ class Tetris(gym.Env):
         if not self.free_fall:
             self.block_count += 1
             self.current_block = self.blocks_buf.pop(0)
-        
+
+            # convert the points to array
+            self.block_a = np.zeros((4,4))
+            for i in range(0,4):
+                self.block_a[self.current_block[i][1]][self.current_block[i][0]] = self.block_count          
+
         for i in range(1, self.block_count+1):
             fall = None
             for j in self.board:
