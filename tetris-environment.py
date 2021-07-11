@@ -68,7 +68,7 @@ class Tetris(gym.Env):
 
         cleared_lines = 0
 
-        # TODO fix falling
+        # TODO fix falling - not all at once; check for end
         # TODO action (move left, right and rotate left, right)
 
         if self.step_idx % len(Tetris.TETRAMINOS) == 0:
@@ -89,28 +89,38 @@ class Tetris(gym.Env):
                 if not (self.board[i][0:3] == 0).all():
                     self.done = True
             
-            # insert new blocks
+            # insert new block
             if not self.done:
                 for idx, i in enumerate(range(int(Tetris.WIDTH/2-2-1), int(Tetris.WIDTH/2+2-1))):
                     for val_idx, val in enumerate(self.block_a[idx]):
                         self.board[i][val_idx] = val
             
-
+        # check if a certain number should fall or not
         for i in range(1, self.block_count):
             fall = None
+            el_count = 0
             for j in self.board:
                 for n, k in enumerate(j):
+                    # check whether all entrys of a block have already been checked
+                    unique, counts = np.unique(self.board, return_counts=True)
+                    uc_dict = dict(zip(unique, counts))
+                    if uc_dict[i] <= el_count: continue
+                    # check if block is at bottom of board
+                    if n == Tetris.HEIGHT -1:
+                        if k == i:
+                            fall = False
+                        continue
                     # check if it is block and if there is not block below
-                    if k == i and (j[int(n)+1] == 0 or j[int(n)+1] == i):
+                    if k == i and (j[int(n)+1] == 0 or j[int(n)+1] == i) and n != 39 and fall != False:
                         fall = True
-                    elif(k == i and (j[int(n)+1] != 0)): fall = False
+                        el_count += 1
+                    if(k == i and (j[int(n)+1] != 0) or n == Tetris.HEIGHT-1): fall = False                    
+
             # do sticky fall
             if fall:
                 for idx, column in enumerate(self.board):
                     for n, num in enumerate(column):
-                        if n == 39:
-                            continue
-                        if num == i and i is not 0:
+                        if num == i and i != 0 and n != 39:
                             self.board[idx][int(n)] = 0.0
                             self.board[idx][int(n+1)] = i
                             
