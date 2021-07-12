@@ -68,7 +68,7 @@ class Tetris(gym.Env):
 
         cleared_lines = 0
 
-        # TODO fix falling - not all at once; check for end
+        # TODO fix done 
         # TODO action (move left, right and rotate left, right)
 
         if self.step_idx % len(Tetris.TETRAMINOS) == 0:
@@ -78,58 +78,70 @@ class Tetris(gym.Env):
         if not self.free_fall:
             self.block_count += 1
             self.current_block = self.blocks_buf.pop(0)
+            
+            # check if there is space to insert the new block
+            for i in range(int(Tetris.WIDTH/2-2-1), int(Tetris.WIDTH/2+2)):
+                if not (self.board[i][0:3] == 0).all():
+                    self.done = True
+                    return np.clip(self.board, 0,1), reward, self.done, None            
 
             # convert the points to array (columns(points)) ordered top to bottom
             self.block_a = np.zeros((4,4))
             for i in range(0,4):
                 self.block_a[self.current_block[i][1]][self.current_block[i][0]] = self.block_count     
 
-            # check if there is space to insert the new block
-            for i in range(int(Tetris.WIDTH/2-2-1), int(Tetris.WIDTH/2+2)):
-                if not (self.board[i][0:3] == 0).all():
-                    self.done = True
+
             
             # insert new block
             if not self.done:
                 for idx, i in enumerate(range(int(Tetris.WIDTH/2-2-1), int(Tetris.WIDTH/2+2-1))):
                     for val_idx, val in enumerate(self.block_a[idx]):
                         self.board[i][val_idx] = val
-            
+        ls = []
         # check if a certain number should fall or not
         for i in range(1, self.block_count):
             fall = None
             el_count = 0
             for j in self.board:
                 for n, k in enumerate(j):
-                    # check whether all entrys of a block have already been checked
-                    unique, counts = np.unique(self.board, return_counts=True)
-                    uc_dict = dict(zip(unique, counts))
-                    if uc_dict[i] <= el_count: continue
-                    # check if block is at bottom of board
                     if n == Tetris.HEIGHT -1:
                         if k == i:
                             fall = False
                         continue
+                    
                     # check if it is block and if there is not block below
-                    if k == i and (j[int(n)+1] == 0 or j[int(n)+1] == i) and n != 39 and fall != False:
+                    if k == i and j[int(n)+1] == 0 and n != 39 and fall != False:
                         fall = True
                         el_count += 1
-                    if(k == i and (j[int(n)+1] != 0) or n == Tetris.HEIGHT-1): fall = False                    
-
-            # do sticky fall
+                    if(k == i and (j[int(n)+1] != 0 and j[int(n)+1] != i) or n == Tetris.HEIGHT-1): fall = False                    
+            
+            # which values should be chnanged to fall
+            change_to_zero = []
+            change_to_one = []
             if fall:
                 for idx, column in enumerate(self.board):
                     for n, num in enumerate(column):
-                        if num == i and i != 0 and n != 39:
-                            self.board[idx][int(n)] = 0.0
-                            self.board[idx][int(n+1)] = i
-                            
-
+                        if num == i and n != 39:
+                            ls.append(i)
+                            change_to_zero.append((idx, int(n)))
+                            change_to_one.append((idx, int(n+1)))
+            
+            # change values for fall                             
+            for i, j in change_to_zero:
+                self.board[i][j] = 0
+            for i, j in change_to_one:
+                self.board[i][j] = 1
+            
+            
+            # set free_fall to False, if the current Block has landed
+            print(i == self.block_count)
+            print(fall)
             if i == self.block_count and fall:
                 self.free_fall = True
-            else:
+            elif i == self.block_count:
                 self.free_fall = False
-        
+            print(self.free_fall)
+
         # set all values to zero if line is to clear
         board_as_rows = np.reshape(self.board, (Tetris.HEIGHT, Tetris.WIDTH))
         for i, row, in enumerate(board_as_rows):
