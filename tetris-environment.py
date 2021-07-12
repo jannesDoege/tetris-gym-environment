@@ -68,7 +68,6 @@ class Tetris(gym.Env):
 
         cleared_lines = 0
 
-        # TODO fix done 
         # TODO action (move left, right and rotate left, right)
 
         if self.step_idx % len(Tetris.TETRAMINOS) == 0:
@@ -78,28 +77,25 @@ class Tetris(gym.Env):
         if not self.free_fall:
             self.block_count += 1
             self.current_block = self.blocks_buf.pop(0)
-            
-            # check if there is space to insert the new block
-            for i in range(int(Tetris.WIDTH/2-2-1), int(Tetris.WIDTH/2+2)):
-                if not (self.board[i][0:3] == 0).all():
-                    self.done = True
-                    return np.clip(self.board, 0,1), reward, self.done, None            
 
             # convert the points to array (columns(points)) ordered top to bottom
             self.block_a = np.zeros((4,4))
             for i in range(0,4):
                 self.block_a[self.current_block[i][1]][self.current_block[i][0]] = self.block_count     
-
-
-            
-            # insert new block
+       
+            # insert new block and check for done
             if not self.done:
-                for idx, i in enumerate(range(int(Tetris.WIDTH/2-2-1), int(Tetris.WIDTH/2+2-1))):
+                for idx, i in enumerate(range(int(Tetris.WIDTH/2-2), int(Tetris.WIDTH/2+2))):
                     for val_idx, val in enumerate(self.block_a[idx]):
-                        self.board[i][val_idx] = val
-        ls = []
+                        if self.board[i][val_idx] != 0 and val != 0:
+                            self.done = True
+                            return np.clip(self.board, 0,1), reward, self.done, None
+                        else: self.board[i][val_idx] = val
+            self.free_fall = True
+        ls=[]
+        # TODO fix entry to for loop
         # check if a certain number should fall or not
-        for i in range(1, self.block_count):
+        for i in range(1, self.block_count+1):
             fall = None
             el_count = 0
             for j in self.board:
@@ -134,13 +130,10 @@ class Tetris(gym.Env):
             
             
             # set free_fall to False, if the current Block has landed
-            print(i == self.block_count)
-            print(fall)
             if i == self.block_count and fall:
                 self.free_fall = True
             elif i == self.block_count:
                 self.free_fall = False
-            print(self.free_fall)
 
         # set all values to zero if line is to clear
         board_as_rows = np.reshape(self.board, (Tetris.HEIGHT, Tetris.WIDTH))
@@ -169,7 +162,9 @@ class Tetris(gym.Env):
 
 t = Tetris()
 
-for i in range(3):
+
+for i in range(1,41):
     obs, reward, done, info = t.step(3)
+    print(reward, done, t.free_fall)
     print(obs[2:6])
     
