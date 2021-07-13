@@ -68,7 +68,8 @@ class Tetris(gym.Env):
 
         cleared_lines = 0
 
-        # TODO action (move left, right and rotate left, right)
+        # TODO action (rotate left, right)
+        # TODO fix bug: block gets weird when moving right
 
         if self.step_idx % len(Tetris.TETRAMINOS) == 0:
             self.blocks_buf = [i for i in Tetris.TETRAMINOS]
@@ -92,8 +93,38 @@ class Tetris(gym.Env):
                             return np.clip(self.board, 0,1), reward, self.done, None
                         else: self.board[i][val_idx] = val
             self.free_fall = True
-        ls=[]
-        # TODO fix entry to for loop
+
+        # move left or right
+        if self.free_fall and (Tetris.ACTIONS[action] == "move_left" or Tetris.ACTIONS[action] == "move_right"):
+            # check if there is space to move
+            to_move = []
+            move = True
+            for idx_c, column in enumerate(self.board):
+                for idx_val, val in enumerate(column):
+                    if val == self.block_count:
+                        to_move.append((idx_c, idx_val))
+                    else: continue
+                    if Tetris.ACTIONS[action] == "move_left" and ((self.board[idx_c-1][idx_val] != 0 and self.board[idx_c-1][idx_val] != self.block_count) or idx_c == 0):
+                        move = False
+                    if idx_c == Tetris.WIDTH-1:
+                        move=False
+                        continue
+                    if Tetris.ACTIONS[action] == "move_right" and self.board[idx_c+1][idx_val] != 0 and self.board[idx_c+1][idx_val] != self.block_count:
+                        print("hey")
+                        print(Tetris.ACTIONS[action] == "move_right")
+                        print(idx_c, idx_val)
+                        move = False
+            print(move)
+            if move:
+                for col, row in to_move:
+                    self.board[col][row] = 0
+
+                    if Tetris.ACTIONS[action] == "move_left":
+                        self.board[col-1][row] = self.block_count
+                    else: 
+                        self.board[col+1][row] = self.block_count
+
+
         # check if a certain number should fall or not
         for i in range(1, self.block_count+1):
             fall = None
@@ -118,7 +149,6 @@ class Tetris(gym.Env):
                 for idx, column in enumerate(self.board):
                     for n, num in enumerate(column):
                         if num == i and n != 39:
-                            ls.append(i)
                             change_to_zero.append((idx, int(n)))
                             change_to_one.append((idx, int(n+1)))
             
@@ -163,8 +193,8 @@ class Tetris(gym.Env):
 t = Tetris()
 
 
-for i in range(1,41):
-    obs, reward, done, info = t.step(3)
+for i in range(1,10):
+    obs, reward, done, info = t.step(1)
     print(reward, done, t.free_fall)
-    print(obs[2:6])
+    print(obs[:])
     
