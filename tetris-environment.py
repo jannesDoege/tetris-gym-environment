@@ -42,6 +42,10 @@ class Tetris(gym.Env):
         4: "rotate_neg"
     }
 
+    # [[a, b], [c, d]]
+    _pos_rot_mat = np.array([[0, 1], [-1, 0]])
+    _neg_rot_mat = np.array([[0, -1], [1, 0]])
+
     def __init__(self):
         self.board = np.zeros((Tetris.WIDTH, Tetris.HEIGHT), dtype=np.uint8)
         self.blocks_buf = [i for i in Tetris.TETRAMINOS]
@@ -59,15 +63,10 @@ class Tetris(gym.Env):
 
     def step(self, action):
         reward = 0.0
-
         if self.done:
             return np.clip(self.board, 0,1), reward, self.done, None
-
         self.step_idx += 1
-
         cleared_lines = 0
-
-        # TODO action (rotate left, right)
 
         if self.step_idx % len(Tetris.TETRAMINOS) == 0:
             self.blocks_buf = [i for i in Tetris.TETRAMINOS]
@@ -123,9 +122,23 @@ class Tetris(gym.Env):
                     self.board[col][row] = 0
                 for col, row in ones:
                     self.board[col][row] = self.block_count
-
-        # check if a certain number should fall or not
         
+        # rotate left or right
+        if self.free_fall and (Tetris.ACTIONS[action] == "rotate_pos" or Tetris.ACTIONS[action] == "rotate_neg"):
+            if Tetris.ACTIONS[action] == "rotate_pos":
+                new_block = np.array(self.current_block, copy=False)
+                for idx, point in enumerate(self.current_block):
+                    # center all points (rotation will happen around origin)
+                    i, j = point
+                    new_block[idx] = (i-2, j-2)
+                for idx, point in enumerate(new_block):
+                    new_point = Tetris._pos_rot_mat.dot(point)
+                    new_block[idx] = new_point
+                print(self.current_block)
+                print(new_block)
+
+
+        # check if a certain number should fall or not        
         for i in range(1, self.block_count+1):
             fall = None
             for j in self.board:
@@ -189,7 +202,8 @@ t = Tetris()
 
 
 for i in range(1,6):
-    obs, reward, done, info = t.step(1)
+    obs, reward, done, info = t.step(3)
     print(reward, done, t.free_fall, t.block_count)
     print(obs[:])
+    print(Tetris._neg_rot_mat)
     
