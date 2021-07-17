@@ -1,7 +1,10 @@
+from typing import List
 import gym
 import numpy as np
 import random
 
+# TODO check if rotation is possible, and insert rotated block into field
+# TODO make negative rotation
 
 class Tetris(gym.Env):
     """
@@ -45,6 +48,13 @@ class Tetris(gym.Env):
     # [[a, b], [c, d]]
     _pos_rot_mat = np.array([[0, 1], [-1, 0]])
     _neg_rot_mat = np.array([[0, -1], [1, 0]])
+    
+    # convert the points to array (columns(points)) ordered top to bottom
+    def _convert_points_to_array(self, points):
+        points_a = np.zeros((4, 4))
+        for i in range(0, 4):
+            points_a[points[i][1]][points[i][0]] = self.block_count
+        return points_a
 
     def __init__(self):
         self.board = np.zeros((Tetris.WIDTH, Tetris.HEIGHT), dtype=np.uint8)
@@ -76,10 +86,7 @@ class Tetris(gym.Env):
             self.block_count += 1
             self.current_block = self.blocks_buf.pop(0)
 
-            # convert the points to array (columns(points)) ordered top to bottom
-            self.block_a = np.zeros((4,4))
-            for i in range(0,4):
-                self.block_a[self.current_block[i][1]][self.current_block[i][0]] = self.block_count     
+            self.block_a = self._convert_points_to_array(self.current_block)
        
             # insert new block and check for done
             if not self.done:
@@ -127,16 +134,29 @@ class Tetris(gym.Env):
         if self.free_fall and (Tetris.ACTIONS[action] == "rotate_pos" or Tetris.ACTIONS[action] == "rotate_neg"):
             if Tetris.ACTIONS[action] == "rotate_pos":
                 new_block = np.array(self.current_block, copy=False)
+                                
+                # center all points (rotation will happen around origin)
                 for idx, point in enumerate(self.current_block):
-                    # center all points (rotation will happen around origin)
                     i, j = point
                     new_block[idx] = (i-2, j-2)
+                # rotate all points
                 for idx, point in enumerate(new_block):
                     new_point = Tetris._pos_rot_mat.dot(point)
                     new_block[idx] = new_point
-                print(self.current_block)
-                print(new_block)
-
+                # add 2 to each scalar to avoid neg numbers which cause problems when indexing arrays
+                for idx, point in enumerate(new_block):
+                    new_block[idx][0] += 2
+                    new_block[idx][1] += 2
+                # put down
+                min_y = np.amin(new_block, axis=0)[1]
+                for i in range(len(new_block)):
+                    new_block[i][1] -= min_y
+                # save in fields
+                new_block_t = [(j, i) for i, j in new_block]
+                self.current_block = [i for i in new_block_t]
+                new_block_a = self._convert_points_to_array(new_block)
+                self.block_a = [i for i in new_block_a]
+                
 
         # check if a certain number should fall or not        
         for i in range(1, self.block_count+1):
