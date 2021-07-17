@@ -2,8 +2,7 @@ import gym
 import numpy as np
 import random
 
-# TODO update self._column, self._row 
-# TODO set old blocks after rotation to 0
+# TODO fix rotation (some values are 0 for some reason and other weird stuff) 
 
 class Tetris(gym.Env):
     """
@@ -58,6 +57,7 @@ class Tetris(gym.Env):
     def _insert_block(self, block, zero_zero: tuple):
         possible = True
         field = np.array(self.board, copy = False)
+        np.where(field  == self.block_count, 0, field)
         for idx, i in enumerate(range(int(zero_zero[0]), int(zero_zero[0] + 4))):
             for val_idx, val in enumerate(block[idx]):
                 if field[i][int(val_idx + zero_zero[1])] != 0 and val != 0:
@@ -99,7 +99,8 @@ class Tetris(gym.Env):
             self._row = 0
 
             self.block_a = self._convert_points_to_array(self.current_block)
-       
+            self._column = int(Tetris.WIDTH/2) - 2
+
             # insert new block and check for done
             if not self.done:
                 f, possible = self._insert_block(self.block_a, (int(Tetris.WIDTH/2-2), 0)) 
@@ -130,10 +131,13 @@ class Tetris(gym.Env):
                 if Tetris.ACTIONS[action] == "move_left":
                     zeros = [i for i in to_move]
                     ones = [(i[0]-1, i[1]) for i in zeros]
+                    self._column -= 1
 
                 if Tetris.ACTIONS[action] == "move_right":
                     zeros = [i for i in to_move]
                     ones = [(i[0]+1, i[1]) for i in zeros]
+                    self._column += 1
+
                 for col, row in zeros:
                     self.board[col][row] = 0
                 for col, row in ones:
@@ -198,6 +202,9 @@ class Tetris(gym.Env):
             change_to_zero = []
             change_to_one = []
             if fall:
+                if i == self.block_count:
+                    self._row += 1
+
                 for idx, column in enumerate(self.board):
                     for n, num in enumerate(column):
                         if num == i and n != 39:
@@ -208,7 +215,6 @@ class Tetris(gym.Env):
             for y, j in change_to_zero:
                 self.board[y][j] = 0
             for y, j in change_to_one:
-
                 self.board[y][j] = i
             
             # set free_fall to False, if the current Block has landed
@@ -246,7 +252,7 @@ t = Tetris()
 
 obs, reward, done, info = None, None, None, None
 for i in range(5):
-    obs, reward, done, info = t.step(3)
+    obs, reward, done, info = t.step(4)
     print(reward, done, t.free_fall, t.block_count)
     print(obs[:])
 #print(reward, done, info)
