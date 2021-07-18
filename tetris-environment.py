@@ -56,13 +56,17 @@ class Tetris(gym.Env):
     
     def _insert_block(self, block, zero_zero: tuple):
         possible = True
-        field = np.array(self.board, copy = False)
-        np.where(field  == self.block_count, 0, field)
+        l = []
+        field = np.copy(self.board)
+
+        field = np.where(field  == self.block_count, 0, field)
         for idx, i in enumerate(range(int(zero_zero[0]), int(zero_zero[0] + 4))):
             for val_idx, val in enumerate(block[idx]):
-                if field[i][int(val_idx + zero_zero[1])] != 0 and val != 0:
+                if field[i][int(val_idx + zero_zero[1])] != (0 and val) and val != 0:
                     possible = False
-                else: field[i][val_idx] = val
+                    l.append(possible)
+                else: field[i][val_idx + zero_zero[1]] = val
+        print(l)
         return field, possible
 
     def __init__(self):
@@ -99,14 +103,15 @@ class Tetris(gym.Env):
             self._row = 0
 
             self.block_a = self._convert_points_to_array(self.current_block)
-            self._column = int(Tetris.WIDTH/2) - 2
+            self._column = int(Tetris.WIDTH/2) - 2 + 1
 
             # insert new block and check for done
             if not self.done:
                 f, possible = self._insert_block(self.block_a, (int(Tetris.WIDTH/2-2), 0)) 
-                if possible: self.board = np.array(f, copy=False) 
-                else: self.done = True; return np.clip(self.board, 0,1), reward, self.done, None 
+                if possible: self.board = np.copy(f)
+                else: self.done = True; 
             self.free_fall = True
+            return np.clip(self.board, 0,1), reward, self.done, None
 
         # move left or right
         if self.free_fall and (Tetris.ACTIONS[action] == "move_left" or Tetris.ACTIONS[action] == "move_right"):
@@ -145,7 +150,7 @@ class Tetris(gym.Env):
         
         # rotate left or right
         if self.free_fall and (Tetris.ACTIONS[action] == "rotate_pos" or Tetris.ACTIONS[action] == "rotate_neg"):
-            new_block = np.array(self.current_block, copy=False)
+            new_block = np.copy(self.current_block)
                             
             # center all points (rotation will happen around origin)
             for idx, point in enumerate(self.current_block):
@@ -173,7 +178,6 @@ class Tetris(gym.Env):
             else:
                 for i in range(len(new_block)):
                     new_block[i][0] -= minimum[0]
-                
             new_block_t = [(j, i) for i, j in new_block]
             new_block_a = self._convert_points_to_array(new_block)
 
@@ -182,9 +186,10 @@ class Tetris(gym.Env):
             if possible:
                 # save in fields
                 self.current_block = [i for i in new_block_t]
-                self.block_a = np.array(new_block_a, copy=False)
+                self.block_a = np.copy(new_block_a)
+                print("hohohoohohoho")
                 
-                self.board = np.array(f, copy = False)
+                self.board = np.copy(f)
 
         # check if a certain number should fall or not        
         for i in range(1, self.block_count+1):
@@ -251,10 +256,11 @@ class Tetris(gym.Env):
 t = Tetris()
 
 obs, reward, done, info = None, None, None, None
-for i in range(5):
-    obs, reward, done, info = t.step(4)
+for i in range(8):
+    obs, reward, done, info = t.step(3)
     print(reward, done, t.free_fall, t.block_count)
-    print(obs[:])
+    print(t.block_a)
+    print(t.board)
 #print(reward, done, info)
 #print(obs)
     
