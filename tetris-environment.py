@@ -19,10 +19,10 @@ class Tetris(gym.Env):
 
     4 -> rotate in negative direction
 
-    observation is the whole playfield numpy array with shape (10,40) where 0 means there is no block and 1 means there is a block
+    observation is the whole playfield numpy array with shape (10,20) where 0 means there is no block and 1 means there is a block
     """
     WIDTH = 10
-    HEIGHT = 40
+    HEIGHT = 20
 
     # (y,x)
     TETRAMINOS = [
@@ -241,7 +241,7 @@ class Tetris(gym.Env):
         return np.clip(self.board, 0,1), reward, self.done, None
 
     def reset(self):
-        self.board = np.zeros((10, 40))
+        self.board = np.zeros((Tetris.WIDTH, Tetris.HEIGHT))
         self.blocks_buf = [i for i in Tetris.TETRAMINOS]
         random.shuffle(self.blocks_buf)
         self.step_idx = 0
