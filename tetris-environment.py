@@ -2,7 +2,7 @@ import gym
 import numpy as np
 import random
 
-# TODO fix rotation (some values are 0 for some reason and other weird stuff) 
+# TODO render window
 
 class Tetris(gym.Env):
     """
@@ -56,7 +56,6 @@ class Tetris(gym.Env):
     
     def _insert_block(self, block, zero_zero: tuple):
         possible = True
-        l = []
         field = np.copy(self.board)
 
         field = np.where(field  == self.block_count, 0, field)
@@ -64,9 +63,7 @@ class Tetris(gym.Env):
             for val_idx, val in enumerate(block[idx]):
                 if field[i][int(val_idx + zero_zero[1])] != (0 and val) and val != 0:
                     possible = False
-                    l.append(possible)
                 else: field[i][val_idx + zero_zero[1]] = val
-        print(l)
         return field, possible
 
     def __init__(self):
@@ -164,22 +161,25 @@ class Tetris(gym.Env):
                 else:
                     new_point = Tetris._neg_rot_mat.dot(point)
                 new_block[idx] = new_point
-
+            
             # add 2 to each scalar to avoid neg numbers which cause problems when indexing arrays
             for idx, point in enumerate(new_block):
                 new_block[idx][0] += 2
                 new_block[idx][1] += 2
+            block_to_insert = np.copy(new_block)
 
             # put down
-            minimum = np.amin(new_block, axis=0)
+            minimum = np.amin(block_to_insert, axis=0)
             if Tetris.ACTIONS[action] == "rotate_pos":
-                for i in range(len(new_block)):
-                    new_block[i][1] -= minimum[1]
+                for i in range(len(block_to_insert)):
+                    block_to_insert[i][1] -= minimum[1]
+                    block_to_insert[i][0] -= minimum[0]
             else:
-                for i in range(len(new_block)):
-                    new_block[i][0] -= minimum[0]
-            new_block_t = [(j, i) for i, j in new_block]
-            new_block_a = self._convert_points_to_array(new_block)
+                for i in range(len(block_to_insert)):
+                    block_to_insert[i][1] -= minimum[1]
+                    block_to_insert[i][0] -= minimum[0]
+            new_block_t = [(i, j) for i, j in new_block]
+            new_block_a = self._convert_points_to_array(block_to_insert)
 
             # check if rotation is possible and rotate or dont rotate
             f, possible = self._insert_block(new_block_a, (self._column, self._row))
@@ -187,7 +187,6 @@ class Tetris(gym.Env):
                 # save in fields
                 self.current_block = [i for i in new_block_t]
                 self.block_a = np.copy(new_block_a)
-                print("hohohoohohoho")
                 
                 self.board = np.copy(f)
 
@@ -259,7 +258,6 @@ obs, reward, done, info = None, None, None, None
 for i in range(8):
     obs, reward, done, info = t.step(3)
     print(reward, done, t.free_fall, t.block_count)
-    print(t.block_a)
     print(t.board)
 #print(reward, done, info)
 #print(obs)
