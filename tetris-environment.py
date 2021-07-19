@@ -1,8 +1,11 @@
 import gym
 import numpy as np
 import random
+import tkinter as tk
+import time
 
-# TODO render window
+# TODO update reset
+# TODO block preview
 
 class Tetris(gym.Env):
     """
@@ -82,6 +85,11 @@ class Tetris(gym.Env):
 
         self.observation_space = gym.spaces.Box(low=0, high=1, shape=(Tetris.WIDTH, Tetris.HEIGHT), dtype=np.uint8)
         self.action_space = gym.spaces.Discrete(5)
+
+        self.window = tk.Tk()
+        self.window.resizable(False, False)
+        self.window.geometry(f"{300 + 2*10}x{600 + 20}")
+        self.canvas = tk.Canvas(self.window, width=300, height=600, background="#BBBBBB")
 
     def step(self, action):
         reward = 0.0
@@ -248,9 +256,20 @@ class Tetris(gym.Env):
         self.free_fall = False
         self.current_block = None
 
-    def render(self, render_mode="human"):
-        # TODO create render window
-        pass
+    def render(self, render_mode="human", ms: int = 1000):
+
+        
+        self.canvas.delete("all")
+        self.canvas.create_rectangle(2, 2, 300, 600)
+        for idx_col, column in enumerate(self.board[::-1]):
+            for idx_val, val in enumerate(column):
+                color = "#FF0000" if val != 0 else ""
+                self.canvas.create_rectangle(idx_col*30, idx_val*30, 30+idx_col*30, 30+idx_val*30, fill=color)
+
+        self.canvas.pack()
+        #self.window.after(ms, lambda: self.window.destroy())
+        self.window.update()
+        time.sleep(ms/1000)
 
 t = Tetris()
 
@@ -259,6 +278,8 @@ for i in range(8):
     obs, reward, done, info = t.step(3)
     print(reward, done, t.free_fall, t.block_count)
     print(t.board)
+    t.render()
+
 #print(reward, done, info)
 #print(obs)
     
