@@ -5,7 +5,6 @@ import tkinter as tk
 import time
 
 # TODO update reset
-# TODO block preview
 
 class Tetris(gym.Env):
     """
@@ -73,6 +72,7 @@ class Tetris(gym.Env):
         self.board = np.zeros((Tetris.WIDTH, Tetris.HEIGHT), dtype=np.uint8)
         self.blocks_buf = [i for i in Tetris.TETRAMINOS]
         random.shuffle(self.blocks_buf)
+        self.next_blocks = [self.blocks_buf.pop(0), self.blocks_buf.pop(0)]
         self.step_idx = 0
         self.current_block = None
         self.block_count = 0
@@ -83,7 +83,12 @@ class Tetris(gym.Env):
         self._row = 0
         self._column = 0
 
-        self.observation_space = gym.spaces.Box(low=0, high=1, shape=(Tetris.WIDTH, Tetris.HEIGHT), dtype=np.uint8)
+        obs_spaces = gym.spaces.Tuple(
+            gym.spaces.Box(low=0, high=1, shape=(Tetris.WIDTH, Tetris.HEIGHT), dtype=np.uint8),
+            # two arrays (one for each block) with shape 4x4
+            gym.spaces.Box(low=0, high=1, shape=(2, 4, 4))
+        )
+        self.observation_space = gym.spaces.Dict(obs_spaces)
         self.action_space = gym.spaces.Discrete(5)
 
         self.window = tk.Tk()
@@ -94,17 +99,18 @@ class Tetris(gym.Env):
     def step(self, action):
         reward = 0.0
         if self.done:
-            return np.clip(self.board, 0,1), reward, self.done, None
+            return (np.clip(self.board, 0,1), np.clip(np.array(self.next_blocks))), reward, self.done, None
         self.step_idx += 1
         cleared_lines = 0
 
-        if len(Tetris.TETRAMINOS) == 0:
+        if len(self.blocks_buf) == 0:
             self.blocks_buf = [i for i in Tetris.TETRAMINOS]
             random.shuffle(self.blocks_buf)
         
         if not self.free_fall:
             self.block_count += 1
-            self.current_block = self.blocks_buf.pop(0)
+            self.current_block = self.next_blocks.pop(0)
+            self.next_blocks.append(self.blocks_buf.pop(0))
             self._row = 0
 
             self.block_a = self._convert_points_to_array(self.current_block)
@@ -116,7 +122,7 @@ class Tetris(gym.Env):
                 if possible: self.board = np.copy(f)
                 else: self.done = True; 
             self.free_fall = True
-            return np.clip(self.board, 0,1), reward, self.done, None
+            return (np.clip(self.board, 0,1), np.clip(np.array(self.next_blocks))), reward, self.done, None
 
         # move left or right
         if self.free_fall and (Tetris.ACTIONS[action] == "move_left" or Tetris.ACTIONS[action] == "move_right"):
@@ -246,7 +252,7 @@ class Tetris(gym.Env):
         reward = self.rewards[cleared_lines]
 
         # observation, reward, done, info
-        return np.clip(self.board, 0,1), reward, self.done, None
+        return (np.clip(self.board, 0,1), np.clip(np.array(self.next_blocks))), reward, self.done, None
 
     def reset(self):
         self.board = np.zeros((Tetris.WIDTH, Tetris.HEIGHT))
