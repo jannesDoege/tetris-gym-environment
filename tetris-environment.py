@@ -4,8 +4,6 @@ import random
 import tkinter as tk
 import time
 
-# TODO update reset
-
 class Tetris(gym.Env):
     """
     Custom Tetris Environment
@@ -255,16 +253,26 @@ class Tetris(gym.Env):
         return (np.clip(self.board, 0,1), np.clip(np.array(self.next_blocks))), reward, self.done, None
 
     def reset(self):
-        self.board = np.zeros((Tetris.WIDTH, Tetris.HEIGHT))
+        self.board = np.zeros((Tetris.WIDTH, Tetris.HEIGHT), dtype=np.uint8)
         self.blocks_buf = [i for i in Tetris.TETRAMINOS]
         random.shuffle(self.blocks_buf)
+        self.next_blocks = [self.blocks_buf.pop(0), self.blocks_buf.pop(0)]
         self.step_idx = 0
-        self.free_fall = False
         self.current_block = None
+        self.block_count = 0
+        self.rewards = [0, 1, 4, 8, 16]
+        self.free_fall = False
+        self.block_a = None
+        self.done = False
+        self._row = 0
+        self._column = 0
+
+        self.window = tk.Tk()
+        self.window.resizable(False, False)
+        self.window.geometry(f"{300 + 2*10}x{600 + 20}")
+        self.canvas = tk.Canvas(self.window, width=300, height=600, background="#BBBBBB")
 
     def render(self, render_mode="human", ms: int = 1000):
-
-        
         self.canvas.delete("all")
         self.canvas.create_rectangle(2, 2, 300, 600)
         for idx_col, column in enumerate(self.board[::-1]):
