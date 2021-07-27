@@ -1,6 +1,5 @@
 import time
 import tetris_environment
-import tkinter
 
 class Tetris(tetris_environment.Tetris):
     def __init__(self):
@@ -12,7 +11,7 @@ class Tetris(tetris_environment.Tetris):
         self.window.bind("<Down>", self.down_keypress)
 
         self.key_pressed = 0
-        self.sleep_time = 1
+        self.sleep_time = 0.3
     
     def left_keypress(self, event):
         self.key_pressed = 2
