@@ -4,8 +4,6 @@ import random
 import tkinter as tk
 import time
 
-# TODO fix reward
-
 class Tetris(gym.Env):
     """
     Custom Tetris Environment
@@ -252,15 +250,26 @@ class Tetris(gym.Env):
             if not fall and i == self.block_count:
                 self.free_fall = False
 
-        # set all values to zero if line is to clear
-        board_as_rows = np.reshape(self.board, (Tetris.HEIGHT, Tetris.WIDTH))
-        for i, row, in enumerate(board_as_rows):
-            if (row != 0).all():
-                row[:] = 0.0
-                cleared_lines += 1
-        self.board = np.reshape(board_as_rows, (Tetris.WIDTH, Tetris.HEIGHT))
+        # get all values in row format
+        rows = [[] for i in range(Tetris.HEIGHT)]
+        for column in self.board:
+            for val_idx, val in enumerate(column):
+                rows[val_idx].append(val)
         
-        reward = self.rewards[cleared_lines]
+        # check if line is to clear
+        cleared_lines = []
+        for row_idx, row in enumerate(rows):
+            a = [i for i in row if i != 0]
+            if len(a) >= Tetris.WIDTH:
+                cleared_lines.append(row_idx)
+
+        # set all values in row to zero
+        for idx, column in enumerate(self.board):
+            for val_idx, val in enumerate(column):
+                if val_idx in cleared_lines:
+                    self.board[idx][val_idx] = 0
+
+        reward = self.rewards[len(cleared_lines)]
 
         # observation, reward, done, info
         return (np.clip(self.board, 0,1), np.clip(np.array(self.next_blocks), 0, 1)), reward, self.done, None
