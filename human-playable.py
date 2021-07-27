@@ -37,7 +37,9 @@ class Tetris(tetris_environment.Tetris):
 
 t = Tetris()
 
-while not t.done:
+while True:
     t.mainloop()
+    if t.done:
+        t.reset()
 
 
