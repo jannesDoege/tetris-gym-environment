@@ -287,12 +287,19 @@ class Tetris(gym.Env):
         self.block_a = None
         self.done = False
         self._row = 0
-        self._column = 0
+
+        self.window.destroy()
 
         self.window = tk.Tk()
         self.window.resizable(False, False)
-        self.window.geometry(f"{300 + 2*10}x{600 + 20}")
+        self.window.geometry(f"{300 + 2*10}x{600 + 20 + 30 * 4}")
         self.canvas = tk.Canvas(self.window, width=300, height=600, background="#BBBBBB")
+
+        self.preview = tk.Canvas(self.window, width=300, height= 30 * 4, bg="#BBBBBB")
+        self.preview.pack(side = "bottom")
+
+        self.prev_1 = tk.Canvas(master=self.preview, width=30 * 4, height= 30 * 4, bg="#BBBBBB")
+        self.prev_2 = tk.Canvas(master=self.preview, width=30 * 4, height=30 * 4, bg="#BBBBBB")
 
     def render(self, render_mode="human", ms: int = 1000):
         self.canvas.delete("all")
@@ -312,6 +319,13 @@ class Tetris(gym.Env):
             for idx_val, val in enumerate(column):
                 color = "#990000" if val != 0 else ""
                 self.prev_1.create_rectangle(idx_col*30, idx_val*30, 30+idx_col*30, 30+idx_val*30, fill=color)
+
+        self.prev_2.delete("all")
+        self.prev_2.create_rectangle(2,2, 30 * 4 * 4, 30 * 4)        
+        for idx_col, column in enumerate(nbs[1]):
+            for idx_val, val in enumerate(column):
+                color = "#990000" if val != 0 else ""
+                self.prev_2.create_rectangle(idx_col*30, idx_val*30, 30+idx_col*30, 30+idx_val*30, fill=color)
 
         self.canvas.pack()
 
